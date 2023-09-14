@@ -5,6 +5,8 @@
 
 #ifdef HAVE_S390X_VX
 #include "s390x/crc32_vx_hooks.h"
+#elif defined(Z_POWER8) || defined(Z_POWER9)
+#include "power/crc32_z_power_hooks.h"
 #endif
 
 #ifdef HAVE_S390X_DFLTCC

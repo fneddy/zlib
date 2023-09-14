@@ -80,6 +80,7 @@ endif(NOT ZLIB_CONF_WRITTEN)
 # Add contrib code
 #
 add_subdirectory(contrib/s390x)
+add_subdirectory(contrib/power)
 #
 # Check to see if we have large file support
 #
@@ -207,6 +208,7 @@ if(ZLIB_BUILD_SHARED)
         AND NOT (CMAKE_SYSTEM_NAME STREQUAL AIX))
     target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_vx>)
     target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_dfltcc>)
+    target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_power>)
 endif(ZLIB_BUILD_SHARED)
 
 if(ZLIB_BUILD_STATIC)
@@ -231,6 +233,7 @@ if(ZLIB_BUILD_STATIC)
                                                      z${zlib_static_suffix})
     target_link_libraries(zlibstatic PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_vx>)
     target_link_libraries(zlibstatic PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_dfltcc>)
+    target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_power>)
 endif(ZLIB_BUILD_STATIC)
 
 if(ZLIB_INSTALL)

@@ -171,6 +171,9 @@ crc32_vx.o: $(SRCDIR)contrib/s390x/crc32_vx.c
 dfltcc.o: $(SRCDIR)contrib/s390x/dfltcc.c
 	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)contrib/s390x/dfltcc.c
 
+crc32_z_power8.o: $(SRCDIR)contrib/power/crc32_z_power8.c
+	$(CC) $(CFLAGS) -mcpu=power8 $(ZINC) -c -o $@ $(SRCDIR)contrib/power/crc32_z_power8.c
+
 deflate.o: $(SRCDIR)deflate.c
 	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)deflate.c
 
@@ -230,6 +233,11 @@ dfltcc.lo: $(SRCDIR)contrib/s390x/dfltcc.c
 	-@mkdir objs 2>/dev/null || test -d objs
 	$(CC) $(SFLAGS) $(ZINC) -DPIC -c -o objs/dfltcc.o $(SRCDIR)contrib/s390x/dfltcc.c
 	-@mv objs/dfltcc.o $@
+
+crc32_z_power8.lo: $(SRCDIR)contrib/power/crc32_z_power8.c
+	-@mkdir objs 2>/dev/null || test -d objs
+	$(CC) $(SFLAGS) -mcpu=power8 $(ZINC) -DPIC -c -o objs/crc32_z_power8.o $(SRCDIR)contrib/power/crc32_z_power8.c
+	-@mv objs/crc32_z_power8.o $@
 
 deflate.lo: $(SRCDIR)deflate.c
 	-@mkdir objs 2>/dev/null || test -d objs

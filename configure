@@ -95,6 +95,7 @@ memory=0
 unknown=0
 enable_crcvx=1
 enable_dfltcc=0
+enable_crcpower=1
 old_cc="$CC"
 old_cflags="$CFLAGS"
 OBJC='$(OBJZ) $(OBJG)'
@@ -122,7 +123,7 @@ case "$1" in
       echo '  configure [--const] [--zprefix] [--prefix=PREFIX]  [--eprefix=EXPREFIX]' | tee -a configure.log
       echo '    [--static] [--64] [--libdir=LIBDIR] [--sharedlibdir=LIBDIR]' | tee -a configure.log
       echo '    [--includedir=INCLUDEDIR] [--archs="-arch i386 -arch x86_64"]' | tee -a configure.log
-      echo '    [--disable-crcvx] [--dfltcc] [--dfltcc-level-mask=MASK]' | tee -a configure.log
+      echo '    [--disable-crcvx] [--dfltcc] [--dfltcc-level-mask=MASK][--disable-crcpower]' | tee -a configure.log
         exit 0 ;;
     -p*=* | --prefix=*) prefix=`echo $1 | sed 's/.*=//'`; shift ;;
     -e*=* | --eprefix=*) exec_prefix=`echo $1 | sed 's/.*=//'`; shift ;;
@@ -154,6 +155,7 @@ case "$1" in
     --dfltcc-level-mask=*)
       CFLAGS="$CFLAGS -DDFLTCC_LEVEL_MASK=`echo $1 | sed 's/.*=//'`"
       shift ;;
+    --disable-crcpower) enable_crcpower=0; shift ;;
     *) unknown=1; echo "unknown option ignored: $1" | tee -a configure.log; shift;;
     esac
 done
@@ -951,6 +953,51 @@ if test $HAVE_S390X -eq 1 && test $enable_dfltcc -eq 1; then
     SFLAGS="$SFLAGS -DHAVE_S390X_DFLTCC"
     OBJC="$OBJC dfltcc.o"
     PIC_OBJC="$PIC_OBJC dfltcc.lo"
+fi
+
+
+# Test to see if we can use the optimizations for Power
+echo >> configure.log
+cat > $test.c <<EOF
+#ifndef _ARCH_PPC
+  #error "Target is not Power"
+#endif
+#if !(defined(__PPC64__) || defined(__powerpc64__))
+  #error "Target is not 64 bits"
+#endif
+#if !(defined(__BUILTIN_CPU_SUPPORTS__)) && !(__has_builtin(__builtin_cpu_supports))
+  #error "Target doesn't support __builtin_cpu_supports()"
+#endif
+EOF
+
+if tryboth $CC -c $CFLAGS $test.c && test $enable_crcpower -eq 1 ; then
+  echo "int main(void){return 0;}" > $test.c
+
+  if tryboth $CC -c $CFLAGS -mcpu=power8 $test.c; then
+    POWER8="-DZ_POWER8"
+    PIC_OBJC="${PIC_OBJC} crc32_z_power8.lo"
+    OBJC="${OBJC} crc32_z_power8.o"
+    SFLAGS="${SFLAGS} ${POWER8}"
+    CFLAGS="${CFLAGS} ${POWER8}"
+    echo "Checking for -mcpu=power8 support... Yes." | tee -a configure.log
+  else
+    echo "Checking for -mcpu=power8 support... No." | tee -a configure.log
+  fi
+
+  if tryboth $CC -c $CFLAGS -mcpu=power9 $test.c; then
+    POWER9="-DZ_POWER9"
+    PIC_OBJC="${PIC_OBJC}"
+    OBJC="${OBJC}"
+    CFLAGS="${CFLAGS} ${POWER9}"
+    SFLAGS="${SFLAGS} ${POWER9}"
+    echo "Checking for -mcpu=power9 support... Yes." | tee -a configure.log
+  else
+    echo "Checking for -mcpu=power9 support... No." | tee -a configure.log
+  fi
+
+  echo "Checking for Power optimizations support... Yes." | tee -a configure.log
+else
+  echo "Checking for Power optimizations support... No." | tee -a configure.log
 fi
 
 # show the results in the log

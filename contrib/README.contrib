@@ -42,6 +42,11 @@ minizip/    by Gilles Vollant <info@winimage.com>
 pascal/     by Bob Dellaca <bobdl@xtra.co.nz> et al.
         Support for Pascal
 
+power/      by Daniel Black <daniel@linux.ibm.com>
+        Matheus Castanho <msc@linux.ibm.com>
+        and Rogerio Alves <rcardoso@linux.ibm.com>
+        Optimized functions for Power processors
+
 puff/       by Mark Adler <madler@alumni.caltech.edu>
         Small, low memory usage inflate.  Also serves to provide an
         unambiguous description of the deflate format.
