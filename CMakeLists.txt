@@ -8,6 +8,7 @@ set(VERSION "1.3.1.1")
 option(ZLIB_BUILD_EXAMPLES "Enable Zlib Examples" ON)
 
 option(POWER "Enable building power implementation")
+option(DFLTCC "Enable building S390-DFLTCC implementaiton")
 
 set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
@@ -197,6 +198,39 @@ if(CMAKE_COMPILER_IS_GNUCC)
 
             set(ZLIB_PRIVATE_HDRS ${ZLIB_PRIVATE_HDRS} contrib/power/power.h)
             set(ZLIB_SRCS ${ZLIB_SRCS} ${ZLIB_POWER8} ${ZLIB_POWER9})
+        endif()
+    endif()
+
+    if(DFLTCC)
+        # Test to see if we can use the optimizations for S390
+        CHECK_C_SOURCE_COMPILES("
+            #ifndef __s390x__
+                #error \"Target is not S390X\"
+            #endif
+            int main() { return 0; }
+            " HAS_S390X_SUPPORT)
+
+        # check if we have secure_getenv
+        set(CMAKE_REQUIRED_FLAGS -D_GNU_SOURCE=1)
+        CHECK_C_SOURCE_COMPILES("
+            #include <stdlib.h>
+            int main() { char* _foo = secure_getenv(\"PWD\");return 0; }
+            " HAS_SECURE_GETENV)
+        if(HAS_SECURE_GETENV)
+            add_definitions(-DZ_HAVE_SECURE_GETENV)
+        endif()
+        set(CMAKE_REQUIRED_FLAGS)
+
+        if(HAS_S390X_SUPPORT)
+            set(ZLIB_SRCS ${ZLIB_SRCS}
+                contrib/s390/crc32-vx.c
+                contrib/s390/dfltcc.c
+            )
+
+            set(ZLIB_PRIVATE_HDRS ${ZLIB_PRIVATE_HDRS}
+                contrib/s390/dfltcc.h
+                contrib/s390/dfltcc_deflate.h
+            )
         endif()
     endif()
 endif()
