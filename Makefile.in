@@ -313,7 +313,7 @@ placebo $(SHAREDLIBV): $(PIC_OBJS) libz.a
 	-@rmdir objs
 
 crc32_test$(EXE): crc32_test.o $(STATICLIB)
-	$(CC) $(CFLAGS) -o $@ crc32_test.o $(TEST_LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ crc32_test.o $(TEST_LIBS)
 
 example$(EXE): example.o $(STATICLIB)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ example.o $(TEST_LIBS)
@@ -331,7 +331,7 @@ minigzipsh$(EXE): minigzip.o $(SHAREDLIBV)
 	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS) -L. $(SHAREDLIBV)
 
 crc32_test64$(EXE): crc32_test64.o $(STATICLIB)
-	$(CC) $(CFLAGS) -o $@ crc32_test64.o $(TEST_LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ crc32_test64.o $(TEST_LIBS)
 
 example64$(EXE): example64.o $(STATICLIB)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ example64.o $(TEST_LIBS)
