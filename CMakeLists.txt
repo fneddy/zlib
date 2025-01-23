@@ -8,6 +8,8 @@ set(VERSION "1.3.1.1")
 option(ZLIB_BUILD_EXAMPLES "Enable Zlib Examples" ON)
 
 option(POWER "Enable building power implementation")
+option(DFLTCC "Enable building S390-DFLTCC implementaiton")
+option(CRC32VX "Enable building S390-CRC32VX implementaiton" YES)
 
 set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
@@ -132,7 +134,6 @@ if(NOT MINGW)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
-
     # test to see if we can use a GNU indirect function to detect and load optimized code at runtime
     CHECK_C_SOURCE_COMPILES("
     static int test_ifunc_native(void)
@@ -199,6 +200,62 @@ if(CMAKE_COMPILER_IS_GNUCC)
             set(ZLIB_SRCS ${ZLIB_SRCS} ${ZLIB_POWER8} ${ZLIB_POWER9})
         endif()
     endif()
+endif()
+
+# IBM s390 extensions
+if(DFLTCC OR CRC32VX)
+    # Test to see if we can use the optimizations for S390
+    CHECK_C_SOURCE_COMPILES("
+        #ifndef __s390x__
+            #error \"Target is not S390X\"
+        #endif
+        int main() { return 0; }
+        " HAS_S390X_SUPPORT)
+
+    # check if we have secure_getenv
+    set(CMAKE_REQUIRED_FLAGS -D_GNU_SOURCE=1)
+    CHECK_C_SOURCE_COMPILES("
+        #include <stdlib.h>
+        int main() { char* _foo = secure_getenv(\"PWD\");return 0; }
+        " HAS_SECURE_GETENV)
+    if(HAS_SECURE_GETENV)
+        add_definitions(-DZ_HAVE_SECURE_GETENV)
+    endif()
+    set(CMAKE_REQUIRED_FLAGS)
+
+    # s390x dfltcc extension
+    if(HAS_S390X_SUPPORT AND DFLTCC)
+        set(ZLIB_SRCS ${ZLIB_SRCS}
+            contrib/s390/dfltcc.c
+        )
+        set(ZLIB_PRIVATE_HDRS ${ZLIB_PRIVATE_HDRS}
+            contrib/s390/dfltcc.h
+            contrib/s390/dfltcc_deflate.h
+        )
+    endif()
+
+    # s390x crc32vx extension
+    if(HAS_S390X_SUPPORT AND CRC32VX)
+        set(ZLIB_SRCS ${ZLIB_SRCS}
+            contrib/s390/crc32-vx.c
+        )
+
+        foreach(flag IN ITEMS -mzarch -fzvector)
+            set(CMAKE_REQUIRED_FLAGS ${flag})
+            CHECK_C_SOURCE_COMPILES("#ifndef __s390x__
+                #error
+                #endif
+                int main(){return 0;}" HAS_FLAG${flag})
+            set(CMAKE_REQUIRED_FLAGS )
+
+            if(HAS_FLAG${flag})
+                set_source_files_properties(
+                                contrib/s390/crc32-vx.c
+                                PROPERTIES COMPILE_FLAGS ${flag})
+            endif()
+        endforeach()
+
+        endif()
 endif()
 
 # parse the full version number from zlib.h and include in ZLIB_FULL_VERSION

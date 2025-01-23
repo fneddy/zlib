@@ -92,6 +92,8 @@ debug=0
 address=0
 memory=0
 unknown=0
+dfltcc=0
+crc32vx=1
 old_cc="$CC"
 old_cflags="$CFLAGS"
 OBJC='$(OBJZ) $(OBJG)'
@@ -120,6 +122,7 @@ case "$1" in
       echo '    [--static] [--64] [--libdir=LIBDIR] [--sharedlibdir=LIBDIR]' | tee -a configure.log
       echo '    [--includedir=INCLUDEDIR] [--archs="-arch i386 -arch x86_64"]' | tee -a configure.log
       echo '    [--dfltcc] [--dfltcc-level-mask=MASK]' | tee -a configure.log
+      echo '    [--without-crc32vx] ' | tee -a configure.log
         exit 0 ;;
     -p*=* | --prefix=*) prefix=`echo $1 | sed 's/.*=//'`; shift ;;
     -e*=* | --eprefix=*) exec_prefix=`echo $1 | sed 's/.*=//'`; shift ;;
@@ -146,12 +149,8 @@ case "$1" in
     --sanitize) address=1; shift ;;
     --address) address=1; shift ;;
     --memory) memory=1; shift ;;
-    --dfltcc)
-      CFLAGS="$CFLAGS -DDFLTCC"
-      OBJC="$OBJC dfltcc.o"
-      PIC_OBJC="$PIC_OBJC dfltcc.lo"
-      shift
-      ;;
+    --dfltcc) dfltcc=1; shift;;
+    --without-crc32vx) crc32vx=0; shift;;
     --dfltcc-level-mask=*)
       CFLAGS="$CFLAGS -DDFLTCC_LEVEL_MASK=`echo $1 | sed 's/.*=//'`"
       shift
@@ -238,6 +237,7 @@ if test "$gcc" -eq 1 && ($cc -c $test.c) >> configure.log 2>&1; then
   if test -z "$uname"; then
     uname=`(uname -s || echo unknown) 2>/dev/null`
   fi
+
   case "$uname" in
   Linux* | linux* | *-linux* | GNU | GNU/* | solaris* | Haiku)
         case "$mname" in
@@ -930,30 +930,56 @@ else
   echo "Checking for Power optimizations support... No." | tee -a configure.log
 fi
 
-# check if we are compiling for s390 and binutils support vector extensions
-VGFMAFLAG=-march=z13
+# check for IBM s390
 cat > $test.c <<EOF
 #ifndef __s390__
 #error
 #endif
 EOF
-if try $CC -c $CFLAGS $VGFMAFLAG $test.c; then
-  CFLAGS="$CFLAGS -DHAVE_S390X_VX"
-  SFLAGS="$SFLAGS -DHAVE_S390X_VX"
-  OBJC="$OBJC crc32-vx.o"
-  PIC_OBJC="$PIC_OBJC crc32-vx.lo"
-  echo "Checking for s390 vector extensions... Yes." | tee -a configure.log
+if tryboth $CC -c $CFLAGS -march=z13 $test.c; then
+  s390x=1
+  echo "Checking for -march=z13... Yes." | tee -a configure.log
 
-  for flag in -mzarch -fzvector; do
-    if try $CC -c $CFLAGS $VGFMAFLAG $flag $test.c; then
-      VGFMAFLAG="$VGFMAFLAG $flag"
-      echo "Checking for $flag... Yes." | tee -a configure.log
+  # enable s390 dfltcc extension
+  if test "$dfltcc" -eq 1; then
+    CFLAGS="${CFLAGS} -DDFLTCC"
+    OBJC="${OBJC} dfltcc.o"
+    PIC_OBJC="${PIC_OBJC} dfltcc.lo"
+  fi
+
+  # check for vector extensions
+  if test "$crc32vx" -eq 1; then
+    VGFMAFLAG=-march=z13
+    cat > $test.c <<EOF
+    #ifndef __s390__
+    #error
+    #endif
+    EOF
+
+    # check for different possible vector flags
+    if try $CC -c $CFLAGS $VGFMAFLAG $test.c; then
+      CFLAGS="$CFLAGS -DHAVE_S390X_VX"
+      SFLAGS="$SFLAGS -DHAVE_S390X_VX"
+      OBJC="$OBJC crc32-vx.o"
+      PIC_OBJC="$PIC_OBJC crc32-vx.lo"
+      echo "Checking for s390 vector extensions... Yes." | tee -a configure.log
+
+      # check for s390 compile flags
+      for flag in -mzarch -fzvector; do
+        if try $CC -c $CFLAGS $VGFMAFLAG $flag $test.c; then
+          VGFMAFLAG="$VGFMAFLAG $flag"
+          echo "Checking for $flag... Yes." | tee -a configure.log
+        else
+          echo "Checking for $flag... No." | tee -a configure.log
+        fi
+      done
     else
-      echo "Checking for $flag... No." | tee -a configure.log
+      echo "Checking for s390 vector extensions... No." | tee -a configure.log
     fi
-  done
+  fi
 else
-  echo "Checking for s390 vector extensions... No." | tee -a configure.log
+  s390x=0
+  echo "Checking for -march=z13... Yes." | tee -a configure.log
 fi
 
 # show the results in the log
