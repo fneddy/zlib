@@ -17,6 +17,13 @@
 #include <stdint.h>
 #include <vecintrin.h>
 
+#ifdef __clang__
+#  if ((__clang_major__ == 18) || (__clang_major__ == 19 && (__clang_minor__ < 1 || (__clang_minor__ == 1 && __clang_patchlevel__ < 2))))
+#    error CRC32-VX optimizations are broken due to compiler bug in Clang versions: 18.0.0 <= clang_version < 19.1.2. \
+           Either disable the zlib-ng CRC32-VX optimization, or switch to another compiler/compiler version.
+#  endif
+#endif
+
 typedef unsigned char uv16qi __attribute__((vector_size(16)));
 typedef unsigned int uv4si __attribute__((vector_size(16)));
 typedef unsigned long long uv2di __attribute__((vector_size(16)));
