@@ -26,6 +26,8 @@ option(ZLIB_BUILD_MINIZIP "Enable building libminizip contrib library" OFF)
 option(ZLIB_INSTALL "Enable installation of zlib" ON)
 option(ZLIB_PREFIX "prefix for all types and library functions, see zconf.h.in"
        OFF)
+option(DFLTCC "Enable building S390-DFLTCC implementaiton" OFF)
+option(CRC32VX "Enable building S390-CRC32VX implementaiton" ON)
 mark_as_advanced(ZLIB_PREFIX)
 
 if(WIN32)
@@ -153,6 +155,63 @@ set(ZLIB_SRCS
     trees.c
     uncompr.c
     zutil.c)
+
+
+# IBM s390 extensions
+if(DFLTCC OR CRC32VX)
+# Test to see if we can use the optimizations for S390
+CHECK_C_SOURCE_COMPILES("
+	#ifndef __s390x__
+		#error \"Target is not S390X\"
+	#endif
+	int main() { return 0; }
+	" HAS_S390X_SUPPORT)
+
+# check if we have secure_getenv
+set(CMAKE_REQUIRED_FLAGS -D_GNU_SOURCE=1)
+CHECK_C_SOURCE_COMPILES("
+	#include <stdlib.h>
+	int main() { char* _foo = secure_getenv(\"PWD\");return 0; }
+	" HAS_SECURE_GETENV)
+if(HAS_SECURE_GETENV)
+	add_definitions(-DZ_HAVE_SECURE_GETENV)
+endif()
+set(CMAKE_REQUIRED_FLAGS)
+
+# s390x dfltcc extension
+if(HAS_S390X_SUPPORT AND DFLTCC)
+	set(ZLIB_SRCS ${ZLIB_SRCS}
+		contrib/s390/dfltcc.c
+	)
+	set(ZLIB_PRIVATE_HDRS ${ZLIB_PRIVATE_HDRS}
+		contrib/s390/dfltcc.h
+		contrib/s390/dfltcc_deflate.h
+	)
+endif()
+
+# s390x crc32vx extension
+if(HAS_S390X_SUPPORT AND CRC32VX)
+	set(ZLIB_SRCS ${ZLIB_SRCS}
+		contrib/s390/crc32-vx.c
+	)
+
+	foreach(flag IN ITEMS -mzarch -fzvector)
+		set(CMAKE_REQUIRED_FLAGS ${flag})
+		CHECK_C_SOURCE_COMPILES("#ifndef __s390x__
+			#error
+			#endif
+			int main(){return 0;}" HAS_FLAG${flag})
+		set(CMAKE_REQUIRED_FLAGS )
+
+		if(HAS_FLAG${flag})
+			set_source_files_properties(
+							contrib/s390/crc32-vx.c
+							PROPERTIES COMPILE_FLAGS ${flag})
+		endif()
+	endforeach()
+
+	endif()
+endif()
 
 if(WIN32)
     set(zlib_static_suffix "s")

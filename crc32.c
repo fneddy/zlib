@@ -691,6 +691,13 @@ local z_word_t crc_word_big(z_word_t data) {
 #endif
 
 /* ========================================================================= */
+#if defined(HAVE_S390X_VX)
+/* Rename function so resolver can use its symbol. The default version will be
+ * returned by the resolver if the host has no support for an optimized version.
+ */
+#define crc32_z crc32_z_default
+#endif /* defined(HAVE_S390X_VX) */
+
 unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
                               z_size_t len) {
     /* Return initial CRC, if requested. */
@@ -1008,6 +1015,11 @@ unsigned long ZEXPORT crc32_z(unsigned long crc, const unsigned char FAR *buf,
     /* Return the CRC, post-conditioned. */
     return crc ^ 0xffffffff;
 }
+
+#if defined(HAVE_S390X_VX)
+#undef crc32_z
+#include "contrib/s390/crc32_z_resolver.c"
+#endif /* defined(HAVE_S390X_VX) */
 
 #endif
 
