@@ -94,6 +94,7 @@ address=0
 memory=0
 unknown=0
 enable_crcvx=1
+enable_dfltcc=0
 old_cc="$CC"
 old_cflags="$CFLAGS"
 OBJC='$(OBJZ) $(OBJG)'
@@ -121,7 +122,7 @@ case "$1" in
       echo '  configure [--const] [--zprefix] [--prefix=PREFIX]  [--eprefix=EXPREFIX]' | tee -a configure.log
       echo '    [--static] [--64] [--libdir=LIBDIR] [--sharedlibdir=LIBDIR]' | tee -a configure.log
       echo '    [--includedir=INCLUDEDIR] [--archs="-arch i386 -arch x86_64"]' | tee -a configure.log
-      echo '    [--disable-crcvx]' | tee -a configure.log
+      echo '    [--disable-crcvx] [--dfltcc] [--dfltcc-level-mask=MASK]' | tee -a configure.log
         exit 0 ;;
     -p*=* | --prefix=*) prefix=`echo $1 | sed 's/.*=//'`; shift ;;
     -e*=* | --eprefix=*) exec_prefix=`echo $1 | sed 's/.*=//'`; shift ;;
@@ -149,6 +150,10 @@ case "$1" in
     --address) address=1; shift ;;
     --memory) memory=1; shift ;;
     --disable-crcvx) enable_crcvx=0; shift ;;
+    --dfltcc)enable_dfltcc=1; shift ;;
+    --dfltcc-level-mask=*)
+      CFLAGS="$CFLAGS -DDFLTCC_LEVEL_MASK=`echo $1 | sed 's/.*=//'`"
+      shift ;;
     *) unknown=1; echo "unknown option ignored: $1" | tee -a configure.log; shift;;
     esac
 done
@@ -937,6 +942,15 @@ EOF
     fi
 fi
 
+# enable ibm s390x dfltcc extension
+HAVE_S390X_DFLTCC=0
+if test $HAVE_S390X -eq 1 && test $enable_dfltcc -eq 1; then
+    echo "Enabeling s390x dfltcc extension ... Yes." | tee -a configure.log
+    CFLAGS="$CFLAGS -DHAVE_S390X_DFLTCC"
+    OBJC="$OBJC dfltcc.o"
+    PIC_OBJC="$PIC_OBJC dfltcc.lo"
+fi
+
 # show the results in the log
 echo >> configure.log
 echo ALL = $ALL >> configure.log
@@ -982,6 +996,7 @@ sed < ${SRCDIR}Makefile.in "
 /^LDFLAGS *=/s#=.*#=$LDFLAGS#
 /^LDSHARED *=/s#=.*#=$LDSHARED#
 /^CPP *=/s#=.*#=$CPP#
+/^VGFMAFLAG *=/s#=.*#=$VGFMAFLAG#
 /^STATICLIB *=/s#=.*#=$STATICLIB#
 /^SHAREDLIB *=/s#=.*#=$SHAREDLIB#
 /^SHAREDLIBV *=/s#=.*#=$SHAREDLIBV#

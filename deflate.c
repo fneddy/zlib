@@ -50,6 +50,7 @@
 /* @(#) $Id$ */
 
 #include "deflate.h"
+#include "contrib/hooks.h"
 
 const char deflate_copyright[] =
    " deflate 1.3.1.1 Copyright 1995-2024 Jean-loup Gailly and Mark Adler ";
@@ -416,6 +417,9 @@ int ZEXPORT deflateInit2_(z_streamp strm, int level, int method,
         wrap = 2;       /* write gzip wrapper instead */
         windowBits -= 16;
     }
+#endif
+#if defined(HAVE_S390X_DFLTCC) || defined(HAVE_S390X_VX)
+    once(&arch_init_done, arch_init);
 #endif
     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED ||
         windowBits < 8 || windowBits > 15 || level < 0 || level > 9 ||
@@ -1240,7 +1244,6 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
     }
 
     if (flush != Z_FINISH) return Z_OK;
-    if (s->wrap <= 0) return Z_STREAM_END;
 
     /* Write the trailer */
 #ifdef GZIP
@@ -1256,7 +1259,7 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
     }
     else
 #endif
-    {
+    if (s->wrap == 1) {
         putShortMSB(s, (uInt)(strm->adler >> 16));
         putShortMSB(s, (uInt)(strm->adler & 0xffff));
     }
@@ -1265,7 +1268,11 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
      * to flush the rest.
      */
     if (s->wrap > 0) s->wrap = -s->wrap; /* write the trailer only once! */
-    return s->pending != 0 ? Z_OK : Z_STREAM_END;
+    if (s->pending == 0) {
+        Assert(s->bi_valid == 0, "bi_buf not flushed");
+        return Z_STREAM_END;
+    }
+    return Z_OK;
 }
 
 /* ========================================================================= */

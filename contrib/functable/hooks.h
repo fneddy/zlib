@@ -1,6 +1,11 @@
 #ifndef Z_HOOKS_H__
 #define Z_HOOKS_H__
 
+#ifdef HAVE_S390X_DFLTCC
+#include "../s390x/s390x-hooks.h"
+#include "../s390x/dfltcc.h"
+#else
+
 /**
  * DEFLATE HOOKS
  */
@@ -39,3 +44,5 @@
 #define ZFREE_STATE ZFREE
 #define ZFREE_WINDOW ZFREE
 #endif
+
+#endif 

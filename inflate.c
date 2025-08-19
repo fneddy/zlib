@@ -84,6 +84,7 @@
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
+#include "contrib/hooks.h"
 
 #ifdef MAKEFIXED
 #  ifndef BUILDFIXED
@@ -199,6 +200,9 @@ int ZEXPORT inflateInit2_(z_streamp strm, int windowBits,
         return Z_STREAM_ERROR;
 #else
         strm->zfree = zcfree;
+#endif
+#if defined(HAVE_S390X_DFLTCC) || defined(HAVE_S390X_VX)
+    once(&arch_init_done, arch_init);
 #endif
     state = (struct inflate_state FAR *)
             ZALLOC_STATE(strm, 1, sizeof(struct inflate_state));
