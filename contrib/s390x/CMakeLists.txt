@@ -1,4 +1,5 @@
 option(ZLIB_CRC32VX "Enable building S390-CRC32VX implementation" ON)
+option(ZLIB_DFLTCC  "Enable building S390-DFLTCC deflate/inflate accelerator implementation" OFF)
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
 
@@ -59,3 +60,42 @@ if(ZLIB_CRC32VX AND HAS_S390X_SUPPORT)
         target_compile_definitions(zlib_crc32_vx PUBLIC HAVE_S390X_VX=1)
     endif(HAS_S390X_VX_SUPPORT OR HAS_Z13_S390X_VX_SUPPORT)
 endif(ZLIB_CRC32VX AND HAS_S390X_SUPPORT)
+
+#
+# Check for IBM S390X - DFLTCC extensions
+#
+if(ZLIB_DFLTCC AND HAS_S390X_SUPPORT)
+    # check if we have static_assert
+    check_c_source_compiles("
+        #include <assert.h>
+        static_assert(1==1,\"true\");
+        " HAS_STATIC_ASSERT)
+
+    # check if we have secure_getenv
+    set(CMAKE_REQUIRED_FLAGS -D_GNU_SOURCE=1)
+    check_c_source_compiles("
+        #include <stdlib.h>
+        int main() { char* _foo = secure_getenv(\"PWD\");return 0; }
+        " HAS_SECURE_GETENV)
+    unset(CMAKE_REQUIRED_FLAGS)
+
+    # check for specific headers
+    check_include_file(sys/sdt.h HAS_SYS_SDT_H)
+
+    # prepare compiling for s390x
+    add_library(zlib_dfltcc OBJECT
+        dfltcc.c
+        dfltcc_hooks.h
+        dfltcc_common.h)
+    target_compile_definitions(zlib_dfltcc PUBLIC HAVE_S390X_DFLTCC=1)
+    if(HAS_STATIC_ASSERT)
+        target_compile_definitions(zlib_dfltcc PRIVATE HAVE_STATIC_ASSERT=1)
+    endif()
+    if(HAS_SECURE_GETENV)
+        target_compile_definitions(zlib_dfltcc PRIVATE
+                                   HAVE_SECURE_GETENV=1 _GNU_SOURCE=1)
+    endif()
+    if(HAS_SYS_SDT_H)
+        target_compile_definitions(zlib_dfltcc PRIVATE HAVE_SYS_SDT_H=1)
+    endif()
+endif(ZLIB_DFLTCC AND HAS_S390X_SUPPORT)

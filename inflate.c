@@ -354,8 +354,7 @@ void makefixed(void)
 }
 #endif /* MAKEFIXED */
 
-int ZLIB_INTERNAL inflate_ensure_window(state)
-    struct inflate_state *state;
+int inflate_ensure_window(struct inflate_state *state)
 {
     /* if it hasn't been done already, allocate space for the window */
     if (state->window == Z_NULL) {

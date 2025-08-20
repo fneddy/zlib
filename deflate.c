@@ -1241,7 +1241,6 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
     }
 
     if (flush != Z_FINISH) return Z_OK;
-    if (s->wrap <= 0) return Z_STREAM_END;
 
     /* Write the trailer */
 #ifdef GZIP
@@ -1257,7 +1256,7 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
     }
     else
 #endif
-    {
+    if (s->wrap == 1) {
         putShortMSB(s, (uInt)(strm->adler >> 16));
         putShortMSB(s, (uInt)(strm->adler & 0xffff));
     }
@@ -1266,7 +1265,11 @@ int ZEXPORT deflate(z_streamp strm, int flush) {
      * to flush the rest.
      */
     if (s->wrap > 0) s->wrap = -s->wrap; /* write the trailer only once! */
-    return s->pending != 0 ? Z_OK : Z_STREAM_END;
+    if (s->pending == 0) {
+        Assert(s->bi_valid == 0, "bi_buf not flushed");
+        return Z_STREAM_END;
+    }
+    return Z_OK;
 }
 
 /* ========================================================================= */

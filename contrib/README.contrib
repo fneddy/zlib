@@ -47,7 +47,9 @@ puff/       by Mark Adler <madler@alumni.caltech.edu>
         unambiguous description of the deflate format.
 
 s390x/      by Ilya Leoshkevich <iii@linux.ibm.com>
-        Hardware-accelerated CRC32 on IBM Z with Z13 VX extension.
+        Hardware-accelerated CRC32 with Z13 VX extension and 
+        Hardware-accelerated deflate on IBM Z with Z15 DEFLATE CONVERSION CALL
+        instruction.
 
 testzlib/   by Gilles Vollant <info@winimage.com>
         Example of the use of zlib

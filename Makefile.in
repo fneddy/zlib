@@ -168,6 +168,9 @@ crc32.o: $(SRCDIR)crc32.c
 crc32_vx.o: $(SRCDIR)contrib/s390x/crc32_vx.c
 	$(CC) $(CFLAGS) $(VGFMAFLAG) $(ZINC) -c -o $@ $(SRCDIR)contrib/s390x/crc32_vx.c
 
+dfltcc.o: $(SRCDIR)contrib/s390x/dfltcc.c
+	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)contrib/s390x/dfltcc.c
+
 deflate.o: $(SRCDIR)deflate.c
 	$(CC) $(CFLAGS) $(ZINC) -c -o $@ $(SRCDIR)deflate.c
 
@@ -222,6 +225,11 @@ crc32_vx.lo: $(SRCDIR)contrib/s390x/crc32_vx.c
 	-@mkdir objs 2>/dev/null || test -d objs
 	$(CC) $(SFLAGS) $(VGFMAFLAG) $(ZINC) -DPIC -c -o objs/crc32_vx.o $(SRCDIR)contrib/s390x/crc32_vx.c
 	-@mv objs/crc32_vx.o $@
+
+dfltcc.lo: $(SRCDIR)contrib/s390x/dfltcc.c
+	-@mkdir objs 2>/dev/null || test -d objs
+	$(CC) $(SFLAGS) $(ZINC) -DPIC -c -o objs/dfltcc.o $(SRCDIR)contrib/s390x/dfltcc.c
+	-@mv objs/dfltcc.o $@
 
 deflate.lo: $(SRCDIR)deflate.c
 	-@mkdir objs 2>/dev/null || test -d objs
@@ -296,6 +304,9 @@ placebo $(SHAREDLIBV): $(PIC_OBJS) libz.a
 	ln -s $@ $(SHAREDLIBM)
 	-@rmdir objs
 
+crc32_test$(EXE): crc32_test.o $(STATICLIB)
+	$(CC) $(CFLAGS) -o $@ crc32_test.o $(TEST_LIBS)
+
 example$(EXE): example.o $(STATICLIB)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ example.o $(TEST_LIBS)
 
@@ -307,6 +318,9 @@ examplesh$(EXE): example.o $(SHAREDLIBV)
 
 minigzipsh$(EXE): minigzip.o $(SHAREDLIBV)
 	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS) -L. $(SHAREDLIBV)
+
+crc32_test64$(EXE): crc32_test64.o $(STATICLIB)
+	$(CC) $(CFLAGS) -o $@ crc32_test64.o $(TEST_LIBS)
 
 example64$(EXE): example64.o $(STATICLIB)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ example64.o $(TEST_LIBS)
@@ -416,6 +430,7 @@ inffast.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)inftrees.h $(SRCDIR
 inftrees.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)inftrees.h
 trees.o: $(SRCDIR)deflate.h $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)trees.h
 crc32_vx.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)contrib/s390x/crc32_vx_hooks.h
+dfltcc.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)contrib/s390x/dfltcc_hooks.h $(SRCDIR)contrib/s390x/dfltcc.h
 
 adler32.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h
 zutil.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)gzguts.h
@@ -428,3 +443,4 @@ inffast.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)inftrees.h $(SRCDI
 inftrees.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)inftrees.h
 trees.lo: $(SRCDIR)deflate.h $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)trees.h
 crc32_vx.lo: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)contrib/s390x/crc32_vx_hooks.h
+dfltcc.o: $(SRCDIR)zutil.h $(SRCDIR)zlib.h zconf.h $(SRCDIR)contrib/s390x/dfltcc_hooks.h $(SRCDIR)contrib/s390x/dfltcc.h

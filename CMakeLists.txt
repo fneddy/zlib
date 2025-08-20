@@ -206,6 +206,7 @@ if(ZLIB_BUILD_SHARED)
         AND NOT APPLE
         AND NOT (CMAKE_SYSTEM_NAME STREQUAL AIX))
     target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_vx>)
+    target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_dfltcc>)
 endif(ZLIB_BUILD_SHARED)
 
 if(ZLIB_BUILD_STATIC)
@@ -229,6 +230,7 @@ if(ZLIB_BUILD_STATIC)
         zlibstatic PROPERTIES EXPORT_NAME ZLIBSTATIC OUTPUT_NAME
                                                      z${zlib_static_suffix})
     target_link_libraries(zlibstatic PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_vx>)
+    target_link_libraries(zlibstatic PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_dfltcc>)
 endif(ZLIB_BUILD_STATIC)
 
 if(ZLIB_INSTALL)
