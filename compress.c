@@ -5,8 +5,11 @@
 
 /* @(#) $Id$ */
 
+#define ZLIB_INTERNAL
 #include "zlib.h"
 #include "contrib/hooks.h"
+
+#define ZLIB_WRAPLEN 6 /* zlib format overhead */
 
 /* ===========================================================================
      Compresses the source buffer into the destination buffer. The level
