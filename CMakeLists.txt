@@ -77,6 +77,10 @@ if(NOT ZLIB_CONF_WRITTEN)
 endif(NOT ZLIB_CONF_WRITTEN)
 
 #
+# Add contrib code
+#
+add_subdirectory(contrib/s390x)
+#
 # Check to see if we have large file support
 #
 set(CMAKE_REQUIRED_DEFINITIONS -D_LARGEFILE64_SOURCE=1)
@@ -201,6 +205,7 @@ if(ZLIB_BUILD_SHARED)
         UNIX
         AND NOT APPLE
         AND NOT (CMAKE_SYSTEM_NAME STREQUAL AIX))
+    target_link_libraries(zlib PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_vx>)
 endif(ZLIB_BUILD_SHARED)
 
 if(ZLIB_BUILD_STATIC)
@@ -223,6 +228,7 @@ if(ZLIB_BUILD_STATIC)
     set_target_properties(
         zlibstatic PROPERTIES EXPORT_NAME ZLIBSTATIC OUTPUT_NAME
                                                      z${zlib_static_suffix})
+    target_link_libraries(zlibstatic PRIVATE $<TARGET_NAME_IF_EXISTS:zlib_crc32_vx>)
 endif(ZLIB_BUILD_STATIC)
 
 if(ZLIB_INSTALL)
